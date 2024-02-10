@@ -15,4 +15,7 @@ public class Options
 
     [Option("lon", Required = true, HelpText = "Longitude of the receiver location")]
     public double Longitude { get; set; }
+
+    [Option("cache", HelpText = "path to cachefile")]
+    public string CacheFile { get; set; }
 }

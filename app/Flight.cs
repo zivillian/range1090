@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Geolocation;
 using range1090.SBS;
 
 namespace range1090;
@@ -60,21 +61,12 @@ public class Flight(SbsMessage message)
         }
     }
 
-    public decimal Longitude
+    public Coordinate Position
     {
         get
         {
-            if (!IsValid) return -1;
-            return _lastPosition.Longitude;
-        }
-    }
-
-    public decimal Latitude
-    {
-        get
-        {
-            if (!IsValid) return -1;
-            return _lastPosition.Latitude;
+            if (!IsValid) return default;
+            return new Coordinate(_lastPosition.Latitude, _lastPosition.Longitude);
         }
     }
 

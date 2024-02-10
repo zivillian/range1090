@@ -1,22 +1,20 @@
-﻿using range1090;
+﻿using System.Net;
+using System.Threading;
+using Geolocation;
+using range1090;
 using range1090.SBS;
 
-public class RangeCalculator
+public class RangeCalculator(double latitude, double longitude)
 {
-    private readonly double _latitude;
-    private readonly double _longitude;
+    private readonly Coordinate _groundZero = new(latitude, longitude);
+
+    private readonly PolarRange _range = new ();
 
     public int MessageCount { get; private set; }
 
     public int FlightCount => _flights.Count;
 
-    private readonly Dictionary<string, Flight> _flights = new Dictionary<string, Flight>();
-
-    public RangeCalculator(double latitude, double longitude)
-    {
-        _latitude = latitude;
-        _longitude = longitude;
-    }
+    private readonly Dictionary<string, Flight> _flights = new();
 
     public void Add(SbsMessage message)
     {
@@ -35,5 +33,44 @@ public class RangeCalculator
 
         if (!flight.Add(message)) return;
         if (!flight.IsValid) return;
+        var distance = GetDistanceInNm(flight.Position);
+        var bearing = GetBearingInDegree(flight.Position);
+        _range.Add(bearing, flight.FlightLevel, distance);
+    }
+
+    public Task SaveToFileAsync(string filename, CancellationToken cancellationToken)
+    {
+        if (String.IsNullOrEmpty(filename)) return Task.CompletedTask;
+        
+        var data = _range.Serialize();
+        return File.WriteAllBytesAsync(filename, data, cancellationToken);
+    }
+
+    public async Task LoadFileFileAsync(string filename, CancellationToken cancellationToken)
+    {
+        if (String.IsNullOrEmpty(filename)) return;
+        if (!File.Exists(filename)) return;
+
+        var data = await File.ReadAllBytesAsync(filename, cancellationToken);
+        _range.Deserialize(data);
+    }
+
+    public void DumpRange()
+    {
+        for (ushort i = 0; i < 360; i++)
+        {
+            Console.WriteLine($"{i}° {_range.MaxDistance(i)}");
+        }
+    }
+
+    private ushort GetDistanceInNm(Coordinate position)
+    {
+        return (ushort)GeoCalculator.GetDistance(_groundZero, position, decimalPlaces: 0,
+            distanceUnit: DistanceUnit.NauticalMiles);
+    }
+
+    private ushort GetBearingInDegree(Coordinate position)
+    {
+        return (ushort)GeoCalculator.GetBearing(_groundZero, position);
     }
 }
