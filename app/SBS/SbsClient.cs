@@ -1,9 +1,9 @@
 ﻿using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 
-namespace range1090;
+namespace range1090.SBS;
 
-public class BeastClient:IDisposable
+public class SbsClient : IDisposable
 {
     private TcpClient? _client;
 
@@ -13,14 +13,16 @@ public class BeastClient:IDisposable
         await _client.ConnectAsync(server, port, cancellationToken);
     }
 
-    public async IAsyncEnumerable<string?> ReadAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<SbsMessage> ReadAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (_client is null) throw new InvalidOperationException("not connected");
         await using var stream = _client.GetStream();
         using var reader = new StreamReader(stream);
         while (_client.Connected && stream.CanRead && !reader.EndOfStream && !cancellationToken.IsCancellationRequested)
         {
-            yield return await reader.ReadLineAsync(cancellationToken);
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (line is null) continue;
+            yield return new SbsMessage(line);
         }
     }
 
