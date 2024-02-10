@@ -1,14 +1,21 @@
 ﻿using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using Geolocation;
+using NetTopologySuite.Features;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.IO.Converters;
+using NetTopologySuite.Operation.Overlay;
 using range1090;
 using range1090.SBS;
+using Coordinate = NetTopologySuite.Geometries.Coordinate;
 
-public class RangeCalculator(double latitude, double longitude)
+public class RangeCalculator(double latitude, double longitude, string? geojson)
 {
-    private readonly Coordinate _groundZero = new(latitude, longitude);
-
-    private readonly PolarRange _range = new ();
+    private readonly string? _geojson = geojson;
+    private readonly PolarRange _range = new (latitude, longitude);
 
     public int MessageCount { get; private set; }
 
@@ -16,7 +23,7 @@ public class RangeCalculator(double latitude, double longitude)
 
     private readonly Dictionary<string, Flight> _flights = new();
 
-    public void Add(SbsMessage message)
+    public async ValueTask AddAsync(SbsMessage message, CancellationToken cancellationToken)
     {
         MessageCount++;
         if (!_flights.TryGetValue(message.HexIdent, out var flight))
@@ -33,12 +40,40 @@ public class RangeCalculator(double latitude, double longitude)
 
         if (!flight.Add(message)) return;
         if (!flight.IsValid) return;
-        var distance = GetDistanceInNm(flight.Position);
-        var bearing = GetBearingInDegree(flight.Position);
-        _range.Add(bearing, flight.FlightLevel, distance);
+        if (_range.Add(flight.Position, flight.FlightLevel))
+        {
+            await ExportGeoJsonAsync(cancellationToken);
+        }
     }
 
-    public Task SaveToFileAsync(string filename, CancellationToken cancellationToken)
+    private Task ExportGeoJsonAsync(CancellationToken cancellationToken)
+    {
+        if (String.IsNullOrEmpty(_geojson)) return Task.CompletedTask;
+
+        var factory = new GeometryFactory(new PrecisionModel(), 3857);
+
+        var collection = new FeatureCollection();
+        var levels = _range.CreateFlightLevels();
+        foreach (var flightLevel in levels)
+        {
+            var coordinates = new List<Coordinate>();
+            for (int bearing = 0; bearing < 360; bearing++)
+            {
+                //flightLevel.Positions
+            }
+        }
+        return Task.CompletedTask;
+
+        //var options = new JsonSerializerOptions
+        //{
+        //    Converters = { new GeoJsonConverterFactory() }
+        //};
+        //var geoJson = JsonSerializer.Serialize(collection, options);
+
+        //return File.WriteAllTextAsync(_geojson, geoJson, cancellationToken);
+    }
+
+    public Task SaveToFileAsync(string? filename, CancellationToken cancellationToken)
     {
         if (String.IsNullOrEmpty(filename)) return Task.CompletedTask;
         
@@ -46,31 +81,13 @@ public class RangeCalculator(double latitude, double longitude)
         return File.WriteAllBytesAsync(filename, data, cancellationToken);
     }
 
-    public async Task LoadFileFileAsync(string filename, CancellationToken cancellationToken)
+    public async Task LoadFileFileAsync(string? filename, CancellationToken cancellationToken)
     {
         if (String.IsNullOrEmpty(filename)) return;
         if (!File.Exists(filename)) return;
 
         var data = await File.ReadAllBytesAsync(filename, cancellationToken);
         _range.Deserialize(data);
-    }
-
-    public void DumpRange()
-    {
-        for (ushort i = 0; i < 360; i++)
-        {
-            Console.WriteLine($"{i}° {_range.MaxDistance(i)}");
-        }
-    }
-
-    private ushort GetDistanceInNm(Coordinate position)
-    {
-        return (ushort)GeoCalculator.GetDistance(_groundZero, position, decimalPlaces: 0,
-            distanceUnit: DistanceUnit.NauticalMiles);
-    }
-
-    private ushort GetBearingInDegree(Coordinate position)
-    {
-        return (ushort)GeoCalculator.GetBearing(_groundZero, position);
+        await ExportGeoJsonAsync(cancellationToken);
     }
 }

@@ -57,7 +57,7 @@ public class Flight(SbsMessage message)
         get
         {
             if (!IsValid) return 0;
-            return (ushort)(_lastAltitude.Altitude / 100);
+            return (ushort)(_lastAltitude.Altitude!.Value / 100);
         }
     }
 
@@ -66,20 +66,20 @@ public class Flight(SbsMessage message)
         get
         {
             if (!IsValid) return default;
-            return new Coordinate(_lastPosition.Latitude, _lastPosition.Longitude);
+            return new Coordinate(_lastPosition.Latitude!.Value, _lastPosition.Longitude!.Value);
         }
     }
 
     public bool Add(SbsMessage message)
     {
         var result = false;
-        if (message.HasAltitude)
+        if (message.Altitude.HasValue)
         {
             _lastAltitude = message;
             result = true;
         }
 
-        if (message.HasLongitude && message.HasLatitude)
+        if (message.Longitude.HasValue && message.Latitude.HasValue)
         {
             _lastPosition = message;
             result = true;

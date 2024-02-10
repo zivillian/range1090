@@ -5,7 +5,7 @@ namespace range1090;
 public class Options
 {
     [Option(Default = "localhost", HelpText = "SBS host")]
-    public string Server { get; set; }
+    public string Server { get; set; } = "localhost";
 
     [Option(Default = (ushort)30003, HelpText = "SBS port")]
     public ushort Port { get; set; }
@@ -17,5 +17,8 @@ public class Options
     public double Longitude { get; set; }
 
     [Option("cache", HelpText = "path to cachefile")]
-    public string CacheFile { get; set; }
+    public string? CacheFile { get; set; }
+
+    [Option("geojson", HelpText = "path to geojson file")]
+    public string? GeoJson { get; set; }
 }

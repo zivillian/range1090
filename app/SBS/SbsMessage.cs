@@ -57,67 +57,56 @@ public class SbsMessage
 
         if (fields[11].Length > 0)
         {
-            HasAltitude = true;
             Altitude = int.Parse(fields[11]);
         }
 
         if (fields[12].Length > 0)
         {
-            HasGroundSpeed = true;
             GroundSpeed = int.Parse(fields[12]);
         }
 
         if (fields[13].Length > 0)
         {
-            HasTrack = true;
             Track = int.Parse(fields[13]);
         }
 
         if (fields[14].Length > 0)
         {
-            HasLatitude = true;
             Latitude = Double.Parse(fields[14], CultureInfo.InvariantCulture);
         }
 
         if (fields[15].Length > 0)
         {
-            HasLongitude = true;
             Longitude = Double.Parse(fields[15], CultureInfo.InvariantCulture);
         }
 
         if (fields[16].Length > 0)
         {
-            HasVerticalRate = true;
             VerticalRate = int.Parse(fields[16]);
         }
 
         if (fields[17].Length > 0)
         {
-            HasSquawk = true;
             Squawk = fields[17];
         }
 
         if (fields[18].Length > 0)
         {
-            HasAlert = true;
             Alert = fields[18] == "-1";
         }
 
         if (fields[19].Length > 0)
         {
-            HasEmergency = true;
             Emergency = fields[19] == "-1";
         }
 
         if (fields[20].Length > 0)
         {
-            HasSPI = true;
             SPI = fields[20] == "-1";
         }
 
         if (fields[21].Length > 0)
         {
-            HasIsOnGround = true;
             IsOnGround = fields[21] == "-1";
         }
     }
@@ -140,51 +129,29 @@ public class SbsMessage
 
     public bool HasCallSign { get; }
 
-    public string CallSign { get; }
+    public string? CallSign { get; }
 
-    public bool HasAltitude { get; }
+    public int? Altitude { get; }
 
-    public int Altitude { get; }
+    public int? GroundSpeed { get; }
+    
+    public int? Track { get; }
 
-    public bool HasGroundSpeed { get; }
+    public double? Latitude { get; }
 
-    public int GroundSpeed { get; }
+    public double? Longitude { get; }
 
-    public bool HasTrack { get; }
+    public int? VerticalRate { get; }
 
-    public int Track { get; }
+    public string? Squawk { get; }
 
-    public bool HasLatitude { get; }
+    public bool? Alert { get; }
 
-    public double Latitude { get; }
+    public bool? Emergency { get; }
 
-    public bool HasLongitude { get; }
+    public bool? SPI { get; }
 
-    public double Longitude { get; }
-
-    public bool HasVerticalRate { get; }
-
-    public int VerticalRate { get; }
-
-    public bool HasSquawk { get; }
-
-    public string Squawk { get; }
-
-    public bool HasAlert { get; }
-
-    public bool Alert { get; }
-
-    public bool HasEmergency { get; }
-
-    public bool Emergency { get; }
-
-    public bool HasSPI { get; }
-
-    public bool SPI { get; }
-
-    public bool HasIsOnGround { get; }
-
-    public bool IsOnGround { get; }
+    public bool? IsOnGround { get; }
 
     public override string ToString()
     {
@@ -201,7 +168,7 @@ public class SbsMessage
 
         return String.Join(",", msg, (int)TransmissionType, SessionId, AircraftId, HexIdent, FlightId,
             Generated.ToUniversalTime().ToString("O"), Logged.ToString("O"), CallSign, Altitude, GroundSpeed, Track,
-            Latitude.ToString(CultureInfo.InvariantCulture), Longitude.ToString(CultureInfo.InvariantCulture),
+            Latitude?.ToString(CultureInfo.InvariantCulture), Longitude?.ToString(CultureInfo.InvariantCulture),
             VerticalRate, Squawk, Alert, Emergency, SPI, IsOnGround);
     }
 }
