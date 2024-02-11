@@ -29,7 +29,7 @@ public class RangeCalculator(double latitude, double longitude)
 
         if (!flight.Add(message)) return false;
         if (!flight.IsValid) return false;
-        return (_range.Add(flight.Position, flight.FlightLevel));
+        return _range.Add(flight.Position, flight.FlightLevel);
     }
 
     public Task SaveToFileAsync(string? filename, CancellationToken cancellationToken)

@@ -24,11 +24,7 @@ public class PolarRange(double latitude, double longitude)
         if (area.Update(position))
         {
             var totalPercentage = _ranges.Where(x=>x is not null).Sum(x => x!.CoveragePercentage) / _ranges.Length;
-            var areaCoverage = _ranges.Where(x => x is not null)
-                .SelectMany(x => x!.Positions)
-                .DistinctBy(x => x.BearingIndex)
-                .Count() / 360d * 100;
-            Console.WriteLine($"FL{flightLevel:D3}({area.CoveragePercentage,5:F1}%) {position.BearingIndex,3}° {position.Distance,5:F1}nm {totalPercentage,7:F3}% {areaCoverage,5:F1}%");
+            Console.WriteLine($"FL{flightLevel:D3}({area.CoveragePercentage,5:F1}%) {position.BearingIndex,3}° {position.Distance,5:F1}nm {totalPercentage,7:F3}%");
             return true;
         }
         return false;
