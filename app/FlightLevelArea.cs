@@ -4,11 +4,13 @@ public class FlightLevelArea(ushort flightLevel)
 {
     public readonly ushort FlightLevel = flightLevel;
 
-    private readonly List<FlightLevelPosition> _positions = new();
+    private readonly List<FlightLevelSegment> _positions = new();
 
-    public IEnumerable<FlightLevelPosition> Positions => _positions;
+    public IEnumerable<FlightLevelSegment> Positions => _positions;
 
     public bool IsValid => _positions.Count > 0;
+
+    public double CoveragePercentage => (_positions.Count / 360d)*100;
 
     public bool Update(FlightLevelPosition position)
     {
@@ -16,18 +18,10 @@ public class FlightLevelArea(ushort flightLevel)
         {
             if (existing.BearingIndex == position.BearingIndex)
             {
-                if (existing.Distance < position.Distance)
-                {
-                    _positions.Remove(existing);
-                    break;
-                }
-                else
-                {
-                    return false;
-                }
+                return existing.Update(position);
             }
         }
-        _positions.Add(position);
+        _positions.Add(FlightLevelSegment.Create(position));
         return true;
     }
 }

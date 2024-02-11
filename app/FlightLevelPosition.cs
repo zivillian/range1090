@@ -42,7 +42,7 @@ public class FlightLevelPosition
 
     public static FlightLevelPosition Create(Coordinate groundZero, Coordinate position)
     {
-        var distance = GeoCalculator.GetDistance(groundZero, position, decimalPlaces: 1, DistanceUnit.NauticalMiles);
+        var distance = GeoCalculator.GetDistance(groundZero, position, decimalPlaces: 6, DistanceUnit.NauticalMiles);
         var bearing = GeoCalculator.GetBearing(groundZero, position);
         return new FlightLevelPosition(position.Latitude, position.Longitude, bearing, distance);
     }

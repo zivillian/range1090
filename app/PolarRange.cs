@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Text;
 using Geolocation;
 
 namespace range1090;
@@ -6,6 +7,7 @@ namespace range1090;
 public class PolarRange(double latitude, double longitude)
 {
     private const int MAX_FLIGHT_LEVEL = 500;
+    private const string MAGIC = "range1090\n";
     private readonly FlightLevelArea?[] _ranges = new FlightLevelArea[MAX_FLIGHT_LEVEL];
     private readonly Coordinate _groundZero = new(latitude, longitude);
 
@@ -21,7 +23,12 @@ public class PolarRange(double latitude, double longitude)
         }
         if (area.Update(position))
         {
-            Console.WriteLine($"FL{flightLevel} {position.BearingIndex}° {position.Distance:F1}nm");
+            var totalPercentage = _ranges.Where(x=>x is not null).Sum(x => x!.CoveragePercentage) / _ranges.Length;
+            var areaCoverage = _ranges.Where(x => x is not null)
+                .SelectMany(x => x!.Positions)
+                .DistinctBy(x => x.BearingIndex)
+                .Count() / 360d * 100;
+            Console.WriteLine($"FL{flightLevel:D3}({area.CoveragePercentage,5:F1}%) {position.BearingIndex,3}° {position.Distance,5:F1}nm {totalPercentage,7:F3}% {areaCoverage,5:F1}%");
             return true;
         }
         return false;
@@ -40,16 +47,23 @@ public class PolarRange(double latitude, double longitude)
                 }))
             .Where(x => x.Value.IsValid)
             .ToList();
-        const int recordSize = sizeof(ushort) + 2 * sizeof(double);
-        var buffer = new byte[recordSize * validRanges.Count];
+        const int recordSize = sizeof(ushort) + 4 * sizeof(double);
+
+        var buffer = new byte[MAGIC.Length + (recordSize * validRanges.Count)];
         var span = buffer.AsSpan();
+        Encoding.ASCII.GetBytes(MAGIC).CopyTo(span);
+        span = span.Slice(MAGIC.Length);
         foreach (var area in validRanges)
         {
             BinaryPrimitives.WriteUInt16BigEndian(span, area.FlightLevel);
             span = span.Slice(sizeof(ushort));
-            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.Latitude);
+            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MinBearing.Latitude);
             span = span.Slice(sizeof(double));
-            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.Longitude);
+            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MinBearing.Longitude);
+            span = span.Slice(sizeof(double));
+            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MaxBearing.Latitude);
+            span = span.Slice(sizeof(double));
+            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MaxBearing.Longitude);
             span = span.Slice(sizeof(double));
         }
 
@@ -59,13 +73,21 @@ public class PolarRange(double latitude, double longitude)
     public void Deserialize(byte[] data)
     {
         var span = data.AsSpan();
+        if (span.Length < MAGIC.Length) return;
+        var magic = Encoding.ASCII.GetBytes(MAGIC);
+        if (!span.StartsWith(magic)) return;
+        span = span.Slice(magic.Length);
         while (!span.IsEmpty)
         {
             var level= BinaryPrimitives.ReadUInt16BigEndian(span);
             span = span.Slice(sizeof(ushort));
-            latitude = BinaryPrimitives.ReadDoubleBigEndian(span);
+            var minLat = BinaryPrimitives.ReadDoubleBigEndian(span);
             span = span.Slice(sizeof(double));
-            longitude = BinaryPrimitives.ReadDoubleBigEndian(span);
+            var minLon = BinaryPrimitives.ReadDoubleBigEndian(span);
+            span = span.Slice(sizeof(double));
+            var maxLat = BinaryPrimitives.ReadDoubleBigEndian(span);
+            span = span.Slice(sizeof(double));
+            var maxLon = BinaryPrimitives.ReadDoubleBigEndian(span);
             span = span.Slice(sizeof(double));
 
             var area = _ranges[level];
@@ -75,7 +97,8 @@ public class PolarRange(double latitude, double longitude)
                 _ranges[level] = area;
             }
 
-            area.Update(FlightLevelPosition.Create(_groundZero, new Coordinate(latitude, longitude)));
+            area.Update(FlightLevelPosition.Create(_groundZero, new Coordinate(minLat, minLon)));
+            area.Update(FlightLevelPosition.Create(_groundZero, new Coordinate(maxLat, maxLon)));
         }
     }
 

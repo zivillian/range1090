@@ -20,10 +20,14 @@ using var client = new SbsClient();
 await client.ConnectAsync(options.Server, options.Port, cts.Token);
 var calculator = new RangeCalculator(options.Latitude, options.Longitude, options.GeoJson);
 await calculator.LoadFileFileAsync(options.CacheFile, cts.Token);
-await foreach (var message in client.ReadAsync(cts.Token))
+try
 {
-    await calculator.AddAsync(message, cts.Token);
+    await foreach (var message in client.ReadAsync(cts.Token))
+    {
+        await calculator.AddAsync(message, cts.Token);
+    }
 }
+catch(TaskCanceledException){}
 
 await calculator.SaveToFileAsync(options.CacheFile, CancellationToken.None);
 return 0;
