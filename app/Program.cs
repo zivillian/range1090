@@ -18,13 +18,17 @@ Console.CancelKeyPress += (_, e) =>
 
 using var client = new SbsClient();
 await client.ConnectAsync(options.Server, options.Port, cts.Token);
-var calculator = new RangeCalculator(options.Latitude, options.Longitude, options.GeoJson);
+var calculator = new RangeCalculator(options.Latitude, options.Longitude);
+var exporter = new GeoJsonExporter(options.Latitude, options.Longitude);
 await calculator.LoadFileFileAsync(options.CacheFile, cts.Token);
 try
 {
     await foreach (var message in client.ReadAsync(cts.Token))
     {
-        await calculator.AddAsync(message, cts.Token);
+        if (calculator.Add(message))
+        {
+            await exporter.ExportGeoJsonAsync(options.GeoJson, calculator.GetFlightLevels(), cts.Token);
+        }
     }
 }
 catch(TaskCanceledException){}
