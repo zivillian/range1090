@@ -149,16 +149,15 @@
       const response = await fetch('range.json');
       const geojson = await response.json();
       const geoJsonLayer = L.geoJSON(geojson, { style: styleLayer }).addTo(map);
-      map.fitBounds(geoJsonLayer.getBounds())
+      map.fitBounds(geoJsonLayer.getBounds());
+      restoreFilter();
     }
 
     function filterMinAltitude(value){
       const minValue = parseInt(value);
       let maxValue = parseInt(maxAltitude.slider.value);
       if (maxValue < minValue){
-        maxAltitude.slider.value = value;
-        const event = new Event('input', {bubbles:false});
-        maxAltitude.slider.dispatchEvent(event);
+        setMaxAltitude(value);
         maxValue = value;
       }
       filterAltitude(minValue, maxValue);
@@ -168,12 +167,22 @@
       const maxValue = parseInt(value);
       let minValue = parseInt(minAltitude.slider.value);
       if (minValue > maxValue){
-        minAltitude.slider.value = value;
-        const event = new Event('input', {bubbles:false});
-        minAltitude.slider.dispatchEvent(event);
+        setMinAltitude(value);
         minValue = value;
       }
       filterAltitude(minValue, maxValue);
+    }
+
+    function setMinAltitude(value){
+      minAltitude.slider.value = value;
+      const event = new Event('input', {bubbles:false});
+      minAltitude.slider.dispatchEvent(event);
+    }
+
+    function setMaxAltitude(value){ 
+      maxAltitude.slider.value = value;
+      const event = new Event('input', {bubbles:false});
+      maxAltitude.slider.dispatchEvent(event);
     }
 
     function filterAltitude(min, max){
@@ -186,9 +195,23 @@
           l.setStyle({fill:true});
         }
       });
+      window.history.replaceState('', '', `?min=${min}&max=${max}`)
     }
 
-    const flightLevels = new Map();
+    function restoreFilter(){
+      const urlParams = new URLSearchParams(window.location.search);
+      const min = urlParams.get('min');
+      const max = urlParams.get('max');
+      if (min !== null){
+        setMinAltitude(min);
+        filterMinAltitude(min);
+      }
+      if (max !== null){
+        setMaxAltitude(max);
+        filterMaxAltitude(max);
+      }
+    }
+
     const map = L.map('map', {
       preferCanvas: true,
       zoomSnap: 0.5
