@@ -21,4 +21,10 @@ public class Options
 
     [Option("geojson", HelpText = "path to geojson file")]
     public string? GeoJson { get; set; }
+
+    [Option(Default = 60, HelpText = "interval for geojson export")]
+    public int Interval { get; set; } = 60;
+
+    [Option(Default = (byte)4, HelpText = "number of decimals for geojson coordinates")]
+    public byte Precision { get; set; } = 4;
 }

@@ -19,7 +19,7 @@ Console.CancelKeyPress += (_, e) =>
 using var client = new SbsClient();
 await client.ConnectAsync(options.Server, options.Port, cts.Token);
 var calculator = new RangeCalculator(options.Latitude, options.Longitude);
-var exporter = new GeoJsonExporter(options.Latitude, options.Longitude);
+var exporter = new GeoJsonExporter(options.Latitude, options.Longitude, options.Precision, options.Interval);
 await calculator.LoadFileFileAsync(options.CacheFile, cts.Token);
 try
 {
