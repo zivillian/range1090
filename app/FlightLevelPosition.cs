@@ -24,7 +24,7 @@ public class FlightLevelPosition
         Bearing = Double.NaN;
         Longitude = longitude;
         Bearing = bearing;
-        BearingIndex = (ushort)bearing;
+        BearingIndex = (ushort)Math.Round(bearing, 0);
         Distance = distance;
     }
 

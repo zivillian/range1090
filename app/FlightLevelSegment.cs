@@ -19,29 +19,22 @@ public class FlightLevelSegment
     {
         if (position.BearingIndex != BearingIndex) return false;
         var result = false;
-        if (position.Bearing <= MinBearing.Bearing &&
-            position.Distance > MinBearing.Distance)
+
+        if (position.Bearing > BearingIndex)
         {
-            MinBearing = position;
-            result = true;
+            if (position.Distance > MaxBearing.Distance)
+            {
+                MaxBearing = position;
+                result = true;
+            }
         }
-        else if(position.Bearing < MinBearing.Bearing &&
-                position.Distance >= MinBearing.Distance)
+        else
         {
-            MinBearing = position;
-            result = true;
-        }
-        if (position.Bearing >= MaxBearing.Bearing && 
-            position.Distance > MaxBearing.Distance)
-        {
-            MaxBearing = position;
-            result = true;
-        }
-        else if (position.Bearing > MaxBearing.Bearing && 
-                 position.Distance >= MaxBearing.Distance)
-        {
-            MaxBearing = position;
-            result = true;
+            if (position.Distance > MinBearing.Distance)
+            {
+                MinBearing = position;
+                result = true;
+            }
         }
         return result;
     }
