@@ -1,3 +1,4 @@
+//Source: https://github.com/Eclipse1979/leaflet-slider/
 L.Control.Slider = L.Control.extend({
     update: function(value){
         return value;
