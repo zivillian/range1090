@@ -2,9 +2,9 @@
 using range1090;
 using range1090.SBS;
 
-public class RangeCalculator(double latitude, double longitude)
+public class RangeCalculator(double latitude, double longitude, bool verbose)
 {
-    private readonly PolarRange _range = new (latitude, longitude);
+    private readonly PolarRange _range = new (latitude, longitude, verbose);
 
     public int MessageCount { get; private set; }
 

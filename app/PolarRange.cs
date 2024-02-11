@@ -4,12 +4,13 @@ using Geolocation;
 
 namespace range1090;
 
-public class PolarRange(double latitude, double longitude)
+public class PolarRange(double latitude, double longitude, bool verbose)
 {
     private const int MAX_FLIGHT_LEVEL = 500;
     private const string MAGIC = "range1090\n";
     private readonly FlightLevelArea?[] _ranges = new FlightLevelArea[MAX_FLIGHT_LEVEL];
     private readonly Coordinate _groundZero = new(latitude, longitude);
+    private readonly bool _verbose = verbose;
 
     public bool Add(Coordinate location, ushort flightLevel)
     {
@@ -23,8 +24,13 @@ public class PolarRange(double latitude, double longitude)
         }
         if (area.Update(position))
         {
-            var totalPercentage = _ranges.Where(x=>x is not null).Sum(x => x!.CoveragePercentage) / _ranges.Length;
-            Console.WriteLine($"FL{flightLevel:D3}({area.CoveragePercentage,5:F1}%) {position.BearingIndex,3}° {position.Distance,5:F1}nm {totalPercentage,7:F3}%");
+            if (_verbose)
+            {
+                var totalPercentage = _ranges.Where(x => x is not null)
+                    .Sum(x => x!.CoveragePercentage) / _ranges.Length;
+                Console.WriteLine($"FL{flightLevel:D3} (Covered:{area.CoveragePercentage,5:F1}%) Bearing:{position.BearingIndex,3}° Distance:{position.Distance,5:F1}nm Total coverage:{totalPercentage,7:F3}%");
+            }
+
             return true;
         }
         return false;

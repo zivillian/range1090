@@ -27,4 +27,7 @@ public class Options
 
     [Option(Default = (byte)4, HelpText = "number of decimals for geojson coordinates")]
     public byte Precision { get; set; } = 4;
+
+    [Option('v', HelpText = "output statistics whenever a position is added")]
+    public bool Verbose { get; set; }
 }
