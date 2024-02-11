@@ -3,6 +3,7 @@ using ColorHelper;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO.Converters;
+using NetTopologySuite.Precision;
 using range1090;
 using range1090.SBS;
 
@@ -10,7 +11,7 @@ public class RangeCalculator(double latitude, double longitude, string? geojson)
 {
     private readonly string? _geojson = geojson;
     private readonly PolarRange _range = new (latitude, longitude);
-    private readonly Coordinate _groundZero = new (Math.Round(longitude,4), Math.Round(latitude,4));
+    private readonly Coordinate _groundZero = new (longitude, latitude);
     private DateTime _lastExport = DateTime.MinValue;
 
     public int MessageCount { get; private set; }
@@ -46,11 +47,12 @@ public class RangeCalculator(double latitude, double longitude, string? geojson)
     {
         if (String.IsNullOrEmpty(_geojson)) return;
         if (DateTime.Now.AddSeconds(-10) < _lastExport) return;
-        var factory = new GeometryFactory(new PrecisionModel(1000), 3857);
         //https://xkcd.com/2170/
-        var epsilon = 0.0001;
+        var factory = new GeometryFactory(new PrecisionModel(1000), 3857);
+        var reducer = new GeometryPrecisionReducer(factory.PrecisionModel);
         var collection = new FeatureCollection();
         var levels = _range.CreateFlightLevels();
+
         foreach (var flightLevel in levels.OrderByDescending(x=>x.FlightLevel))
         {
             var coordinates = new List<Coordinate>();
@@ -59,36 +61,15 @@ public class RangeCalculator(double latitude, double longitude, string? geojson)
                 var segment = flightLevel.Positions.FirstOrDefault(x => x.BearingIndex == bearing);
                 if (segment is null)
                 {
-                    if (coordinates.Count == 0 || !coordinates[^1].Equals(_groundZero))
-                    {
-                        coordinates.Add(_groundZero);
-                    }
+                    coordinates.Add(_groundZero);
                 }
                 else
                 {
-                    if (coordinates.Count == 0 ||
-                        Math.Abs(coordinates[^1].X - segment.MinBearing.Longitude) > epsilon ||
-                        Math.Abs(coordinates[^1].Y - segment.MinBearing.Latitude) > epsilon)
-                    {
-                        coordinates.Add(new Coordinate(
-                            Math.Round(segment.MinBearing.Longitude, 4),
-                            Math.Round(segment.MinBearing.Latitude, 4)));
-                    }
-
-                    if (Math.Abs(coordinates[^1].X - segment.MaxBearing.Longitude) > epsilon ||
-                        Math.Abs(coordinates[^1].Y - segment.MaxBearing.Latitude) > epsilon)
-                    {
-                        coordinates.Add(new Coordinate(
-                            Math.Round(segment.MaxBearing.Longitude,4), 
-                            Math.Round(segment.MaxBearing.Latitude,4)));
-                    }
+                    coordinates.Add(new Coordinate(segment.MinBearing.Longitude, segment.MinBearing.Latitude));
+                    coordinates.Add(new Coordinate(segment.MaxBearing.Longitude, segment.MaxBearing.Latitude));
                 }
             }
-            if (!coordinates[0].Equals(coordinates[^1]))
-            {
-                coordinates.Add(coordinates[0]);
-            }
-            if (coordinates.Count < 4) continue;
+            coordinates.Add(coordinates[0]);
             var polygon = factory.CreatePolygon(coordinates.ToArray());
             var attributes = new AttributesTable
             {
@@ -97,8 +78,11 @@ public class RangeCalculator(double latitude, double longitude, string? geojson)
                 { "fill-opacity", 1 },
                 { "fill", $"#{CalculateColor(flightLevel.FlightLevel*100).Value}" },
             };
-            var feature = new Feature(polygon, attributes);
-            collection.Add(feature);
+            var feature = new Feature(reducer.Reduce(polygon), attributes);
+            if (!feature.Geometry.IsEmpty)
+            {
+                collection.Add(feature);
+            }
         }
 
         var options = new JsonSerializerOptions
