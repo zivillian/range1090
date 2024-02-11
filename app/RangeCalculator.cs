@@ -1,19 +1,17 @@
-﻿using System.Drawing;
-using System.Text.Json;
+﻿using System.Text.Json;
 using ColorHelper;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
-using NetTopologySuite.Geometries.Implementation;
 using NetTopologySuite.IO.Converters;
 using range1090;
 using range1090.SBS;
-using Coordinate = NetTopologySuite.Geometries.Coordinate;
 
 public class RangeCalculator(double latitude, double longitude, string? geojson)
 {
     private readonly string? _geojson = geojson;
     private readonly PolarRange _range = new (latitude, longitude);
-    private readonly Coordinate _groundZero = new Coordinate(longitude, latitude);
+    private readonly Coordinate _groundZero = new (Math.Round(longitude,4), Math.Round(latitude,4));
+    private DateTime _lastExport = DateTime.MinValue;
 
     public int MessageCount { get; private set; }
 
@@ -44,12 +42,13 @@ public class RangeCalculator(double latitude, double longitude, string? geojson)
         }
     }
 
-    private Task ExportGeoJsonAsync(CancellationToken cancellationToken)
+    private async ValueTask ExportGeoJsonAsync(CancellationToken cancellationToken)
     {
-        if (String.IsNullOrEmpty(_geojson)) return Task.CompletedTask;
-
-        var factory = new GeometryFactory(new PrecisionModel(), 3857);
-
+        if (String.IsNullOrEmpty(_geojson)) return;
+        if (DateTime.Now.AddSeconds(-10) < _lastExport) return;
+        var factory = new GeometryFactory(new PrecisionModel(1000), 3857);
+        //https://xkcd.com/2170/
+        var epsilon = 0.0001;
         var collection = new FeatureCollection();
         var levels = _range.CreateFlightLevels();
         foreach (var flightLevel in levels.OrderByDescending(x=>x.FlightLevel))
@@ -60,25 +59,36 @@ public class RangeCalculator(double latitude, double longitude, string? geojson)
                 var segment = flightLevel.Positions.FirstOrDefault(x => x.BearingIndex == bearing);
                 if (segment is null)
                 {
-                    coordinates.Add(_groundZero);
+                    if (coordinates.Count == 0 || !coordinates[^1].Equals(_groundZero))
+                    {
+                        coordinates.Add(_groundZero);
+                    }
                 }
                 else
                 {
-                    coordinates.Add(new Coordinate(segment.MinBearing.Longitude, segment.MinBearing.Latitude));
-                    coordinates.Add(new Coordinate(segment.MaxBearing.Longitude, segment.MaxBearing.Latitude));
+                    if (coordinates.Count == 0 ||
+                        Math.Abs(coordinates[^1].X - segment.MinBearing.Longitude) > epsilon ||
+                        Math.Abs(coordinates[^1].Y - segment.MinBearing.Latitude) > epsilon)
+                    {
+                        coordinates.Add(new Coordinate(
+                            Math.Round(segment.MinBearing.Longitude, 4),
+                            Math.Round(segment.MinBearing.Latitude, 4)));
+                    }
+
+                    if (Math.Abs(coordinates[^1].X - segment.MaxBearing.Longitude) > epsilon ||
+                        Math.Abs(coordinates[^1].Y - segment.MaxBearing.Latitude) > epsilon)
+                    {
+                        coordinates.Add(new Coordinate(
+                            Math.Round(segment.MaxBearing.Longitude,4), 
+                            Math.Round(segment.MaxBearing.Latitude,4)));
+                    }
                 }
             }
-            for (int i = 1; i < coordinates.Count; i++)
+            if (!coordinates[0].Equals(coordinates[^1]))
             {
-                while (i < coordinates.Count &&
-                       coordinates[i].X == coordinates[i - 1].X &&
-                       coordinates[i].Y == coordinates[i - 1].Y)
-                {
-                    coordinates.RemoveAt(i);
-                }
+                coordinates.Add(coordinates[0]);
             }
-            if (coordinates.Count < 3) continue;
-            coordinates.Add(coordinates[0]);
+            if (coordinates.Count < 4) continue;
             var polygon = factory.CreatePolygon(coordinates.ToArray());
             var attributes = new AttributesTable
             {
@@ -93,11 +103,13 @@ public class RangeCalculator(double latitude, double longitude, string? geojson)
 
         var options = new JsonSerializerOptions
         {
-            Converters = { new GeoJsonConverterFactory() }
+            Converters = { new GeoJsonConverterFactory(factory) }
         };
-        var geoJson = JsonSerializer.Serialize(collection, options);
 
-        return File.WriteAllTextAsync(_geojson, geoJson, cancellationToken);
+        await using var file = File.Open(_geojson, FileMode.Truncate);
+
+        await JsonSerializer.SerializeAsync(file, collection, options, cancellationToken);
+        _lastExport = DateTime.Now;
     }
 
     private HEX CalculateColor(int altitude)
