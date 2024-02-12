@@ -12,16 +12,16 @@ public class FlightLevelArea(ushort flightLevel)
 
     public double CoveragePercentage => (_positions.Count / 360d)*100;
 
-    public bool Update(FlightLevelPosition position)
+    public bool Update(double latitude, double longitude, ushort bearing, double distance)
     {
         foreach (var existing in _positions)
         {
-            if (existing.BearingIndex == position.BearingIndex)
+            if (existing.Bearing == bearing)
             {
-                return existing.Update(position);
+                return existing.Update(latitude, longitude, bearing, distance);
             }
         }
-        _positions.Add(FlightLevelSegment.Create(position));
+        _positions.Add(FlightLevelSegment.Create(latitude, longitude, bearing, distance));
         return true;
     }
 }

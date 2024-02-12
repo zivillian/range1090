@@ -10,27 +10,19 @@ public class PolarRange(double latitude, double longitude, bool verbose)
     private const string MAGIC = "range1090\n";
     private readonly FlightLevelArea?[] _ranges = new FlightLevelArea[MAX_FLIGHT_LEVEL];
     private readonly Coordinate _groundZero = new(latitude, longitude);
-    private readonly bool _verbose = verbose;
+    private bool _verbose = verbose;
 
     public bool Add(Coordinate location, ushort flightLevel)
     {
         if (flightLevel >= MAX_FLIGHT_LEVEL) return false;
-        var position = FlightLevelPosition.Create(_groundZero, location);
         var area = _ranges[flightLevel];
         if (area is null)
         {
             area = new FlightLevelArea(flightLevel);
             _ranges[flightLevel] = area;
         }
-        if (area.Update(position))
+        if (UpdateArea(area, _groundZero, location))
         {
-            if (_verbose)
-            {
-                var totalPercentage = _ranges.Where(x => x is not null)
-                    .Sum(x => x!.CoveragePercentage) / _ranges.Length;
-                Console.WriteLine($"FL{flightLevel:D3} (Covered:{area.CoveragePercentage,5:F1}%) Bearing:{position.BearingIndex,3}° Distance:{position.Distance,5:F1}nm Total coverage:{totalPercentage,7:F3}%");
-            }
-
             return true;
         }
         return false;
@@ -49,7 +41,7 @@ public class PolarRange(double latitude, double longitude, bool verbose)
                 }))
             .Where(x => x.Value.IsValid)
             .ToList();
-        const int recordSize = sizeof(ushort) + 4 * sizeof(double);
+        const int recordSize = sizeof(ushort) + 2 * sizeof(double);
 
         var buffer = new byte[MAGIC.Length + (recordSize * validRanges.Count)];
         var span = buffer.AsSpan();
@@ -59,13 +51,9 @@ public class PolarRange(double latitude, double longitude, bool verbose)
         {
             BinaryPrimitives.WriteUInt16BigEndian(span, area.FlightLevel);
             span = span.Slice(sizeof(ushort));
-            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MinBearing.Latitude);
+            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.Latitude);
             span = span.Slice(sizeof(double));
-            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MinBearing.Longitude);
-            span = span.Slice(sizeof(double));
-            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MaxBearing.Latitude);
-            span = span.Slice(sizeof(double));
-            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.MaxBearing.Longitude);
+            BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.Longitude);
             span = span.Slice(sizeof(double));
         }
 
@@ -74,6 +62,8 @@ public class PolarRange(double latitude, double longitude, bool verbose)
 
     public void Deserialize(byte[] data)
     {
+        bool verbose = _verbose;
+        _verbose = false;
         var span = data.AsSpan();
         if (span.Length < MAGIC.Length) return;
         var magic = Encoding.ASCII.GetBytes(MAGIC);
@@ -83,13 +73,9 @@ public class PolarRange(double latitude, double longitude, bool verbose)
         {
             var level= BinaryPrimitives.ReadUInt16BigEndian(span);
             span = span.Slice(sizeof(ushort));
-            var minLat = BinaryPrimitives.ReadDoubleBigEndian(span);
+            var lat = BinaryPrimitives.ReadDoubleBigEndian(span);
             span = span.Slice(sizeof(double));
-            var minLon = BinaryPrimitives.ReadDoubleBigEndian(span);
-            span = span.Slice(sizeof(double));
-            var maxLat = BinaryPrimitives.ReadDoubleBigEndian(span);
-            span = span.Slice(sizeof(double));
-            var maxLon = BinaryPrimitives.ReadDoubleBigEndian(span);
+            var lon = BinaryPrimitives.ReadDoubleBigEndian(span);
             span = span.Slice(sizeof(double));
 
             var area = _ranges[level];
@@ -98,10 +84,9 @@ public class PolarRange(double latitude, double longitude, bool verbose)
                 area = new FlightLevelArea(level);
                 _ranges[level] = area;
             }
-
-            area.Update(FlightLevelPosition.Create(_groundZero, new Coordinate(minLat, minLon)));
-            area.Update(FlightLevelPosition.Create(_groundZero, new Coordinate(maxLat, maxLon)));
+            UpdateArea(area, _groundZero, new Coordinate(lat, lon));
         }
+        _verbose = verbose;
     }
 
     public IEnumerable<FlightLevelArea> CreateFlightLevels()
@@ -112,5 +97,22 @@ public class PolarRange(double latitude, double longitude, bool verbose)
             if (!area.IsValid) continue;
             yield return area;
         }
+    }
+
+    private bool UpdateArea(FlightLevelArea area, Coordinate groundZero, Coordinate position)
+    {
+        var distance = GeoCalculator.GetDistance(groundZero, position, decimalPlaces: 6, DistanceUnit.NauticalMiles);
+        var bearing = (ushort)Math.Round(GeoCalculator.GetBearing(groundZero, position), 0);
+        if (area.Update(position.Latitude, position.Longitude, bearing, distance))
+        {
+            if (_verbose)
+            {
+                var totalPercentage = _ranges.Where(x => x is not null)
+                    .Sum(x => x!.CoveragePercentage) / _ranges.Length;
+                Console.WriteLine($"FL{area.FlightLevel:D3} (Covered:{area.CoveragePercentage,5:F1}%) Bearing:{bearing,3}° Distance:{distance,5:F1}nm Total coverage:{totalPercentage,7:F3}%");
+            }
+            return true;
+        }
+        return false;
     }
 }

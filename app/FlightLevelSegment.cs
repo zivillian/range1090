@@ -2,47 +2,52 @@
 
 public class FlightLevelSegment
 {
-    public ushort BearingIndex { get; }
+    public double Latitude { get; private set; }
 
-    public FlightLevelPosition MinBearing { get; private set; }
+    public double Longitude { get; private set; }
 
-    public FlightLevelPosition MaxBearing { get; private set; }
+    public ushort Bearing { get; }
 
-    private FlightLevelSegment(FlightLevelPosition position)
+    public double Distance { get; private set; }
+
+    private FlightLevelSegment(double latitude, double longitude, ushort bearing, double distance)
     {
-        MinBearing = position;
-        MaxBearing = position;
-        BearingIndex = position.BearingIndex;
+        if (Double.IsNaN(latitude)) throw new ArgumentOutOfRangeException(nameof(latitude));
+        if (Double.IsNaN(longitude)) throw new ArgumentOutOfRangeException(nameof(longitude));
+        if (Double.IsNaN(distance)) throw new ArgumentOutOfRangeException(nameof(distance));
+        Latitude = latitude;
+        Longitude = longitude;
+        Bearing = bearing;
+        Distance = distance;
     }
 
-    public bool Update(FlightLevelPosition position)
+    public bool Update(double latitude, double longitude, ushort bearing, double distance)
     {
-        if (position.BearingIndex != BearingIndex) return false;
-        var result = false;
-
-        if (position.Bearing > BearingIndex)
+        if (bearing != Bearing) return false;
+        
+        if (distance > Distance)
         {
-            if (position.Distance > MaxBearing.Distance)
-            {
-                MaxBearing = position;
-                result = true;
-            }
+            Distance = distance;
+            Latitude = latitude;
+            Longitude = longitude;
+            return true;
         }
-        else
-        {
-            if (position.Distance > MinBearing.Distance)
-            {
-                MinBearing = position;
-                result = true;
-            }
-        }
-        return result;
-    }
 
-    public static FlightLevelSegment Create(FlightLevelPosition position)
+        return false;
+    }
+    public static FlightLevelSegment Create(double latitude, double longitude, ushort bearing, double distance)
     {
-        return new FlightLevelSegment(position);
+        return new FlightLevelSegment(latitude, longitude, bearing, distance);
     }
-
-    public bool IsValid => MinBearing.IsValid && MaxBearing.IsValid;
+    
+    public bool IsValid
+    {
+        get
+        {
+            if (Double.IsNaN(Latitude)) return false;
+            if (Double.IsNaN(Longitude)) return false;
+            if (Double.IsNaN(Distance)) return false;
+            return true;
+        }
+    }
 }

@@ -36,7 +36,7 @@ public class GeoJsonExporter
         foreach (var flightLevel in levels.OrderByDescending(x => x.FlightLevel))
         {
             var coordinates = new List<Coordinate>(360 * 2 + 1);
-            var bearings = flightLevel.Positions.ToDictionary(x => x.BearingIndex);
+            var bearings = flightLevel.Positions.ToDictionary(x => x.Bearing);
             for (ushort bearing = 0; bearing < 360; bearing++)
             {
                 if (!bearings.TryGetValue(bearing, out var segment))
@@ -45,8 +45,7 @@ public class GeoJsonExporter
                 }
                 else
                 {
-                    coordinates.Add(new Coordinate(segment.MinBearing.Longitude, segment.MinBearing.Latitude));
-                    coordinates.Add(new Coordinate(segment.MaxBearing.Longitude, segment.MaxBearing.Latitude));
+                    coordinates.Add(new Coordinate(segment.Longitude, segment.Latitude));
                 }
             }
             coordinates.Add(coordinates[0]);
