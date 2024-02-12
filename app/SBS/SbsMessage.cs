@@ -5,7 +5,7 @@ namespace range1090.SBS;
 public class SbsMessage
 {
     //http://woodair.net/sbs/article/barebones42_socket_data.htm
-    public SbsMessage(string message)
+    public SbsMessage(ReadOnlySpan<char> message)
     {
         Type = message[0] switch
         {
@@ -35,79 +35,79 @@ public class SbsMessage
             _ => throw new ArgumentOutOfRangeException("invalid SBS transmission message type")
         };
         Span<Range> ranges = stackalloc Range[22];
-        message.AsSpan().Split(ranges, ',');
+        message.Split(ranges, ',');
 
-        SessionId = message[ranges[2]];
-        AircraftId = message[ranges[3]];
-        HexIdent = message[ranges[4]];
-        FlightId = message[ranges[5]];
+        SessionId = message[ranges[2]].ToString();
+        AircraftId = message[ranges[3]].ToString();
+        HexIdent = message[ranges[4]].ToString();
+        FlightId = message[ranges[5]].ToString();
         Generated = new DateTimeOffset(
-            DateOnly.ParseExact(message.AsSpan(ranges[6]), "yyyy/MM/dd"),
-            TimeOnly.ParseExact(message.AsSpan(ranges[7]), "HH':'mm':'ss'.'fff"),
+            DateOnly.ParseExact(message[ranges[6]], "yyyy/MM/dd"),
+            TimeOnly.ParseExact(message[ranges[7]], "HH':'mm':'ss'.'fff"),
             TimeSpan.Zero);
         Logged = new DateTimeOffset(
-            DateOnly.ParseExact(message.AsSpan(ranges[8]), "yyyy/MM/dd"),
-            TimeOnly.ParseExact(message.AsSpan(ranges[9]), "HH':'mm':'ss'.'fff"),
+            DateOnly.ParseExact(message[ranges[8]], "yyyy/MM/dd"),
+            TimeOnly.ParseExact(message[ranges[9]], "HH':'mm':'ss'.'fff"),
             TimeSpan.Zero);
-        if (message.AsSpan(ranges[10]).Length > 0)
+        if (message[ranges[10]].Length > 0)
         {
             HasCallSign = true;
-            CallSign = message[ranges[10]];
+            CallSign = message[ranges[10]].ToString();
         }
 
-        if (message.AsSpan(ranges[11]).Length > 0)
+        if (message[ranges[11]].Length > 0)
         {
-            Altitude = int.Parse(message.AsSpan(ranges[11]));
+            Altitude = int.Parse(message[ranges[11]]);
         }
 
-        if (message.AsSpan(ranges[12]).Length > 0)
+        if (message[ranges[12]].Length > 0)
         {
-            GroundSpeed = int.Parse(message.AsSpan(ranges[12]));
+            GroundSpeed = int.Parse(message[ranges[12]]);
         }
 
-        if (message.AsSpan(ranges[13]).Length > 0)
+        if (message[ranges[13]].Length > 0)
         {
-            Track = int.Parse(message.AsSpan(ranges[13]));
+            Track = int.Parse(message[ranges[13]]);
         }
 
-        if (message.AsSpan(ranges[14]).Length > 0)
+        if (message[ranges[14]].Length > 0)
         {
-            Latitude = Double.Parse(message.AsSpan(ranges[14]), CultureInfo.InvariantCulture);
+            Latitude = Double.Parse(message[ranges[14]], CultureInfo.InvariantCulture);
         }
 
-        if (message.AsSpan(ranges[15]).Length > 0)
+        if (message[ranges[15]].Length > 0)
         {
-            Longitude = Double.Parse(message.AsSpan(ranges[15]), CultureInfo.InvariantCulture);
+            Longitude = Double.Parse(message[ranges[15]], CultureInfo.InvariantCulture);
         }
 
-        if (message.AsSpan(ranges[16]).Length > 0)
+        if (message[ranges[16]].Length > 0)
         {
-            VerticalRate = int.Parse(message.AsSpan(ranges[16]));
+            VerticalRate = int.Parse(message[ranges[16]]);
         }
 
-        if (message.AsSpan(ranges[17]).Length > 0)
+        if (message[ranges[17]].Length > 0)
         {
-            Squawk = message[ranges[17]];
+            Squawk = message[ranges[17]].ToString();
         }
 
-        if (message.AsSpan(ranges[18]).Length > 0)
+        if (message[ranges[18]].Length > 0)
         {
-            Alert = message.AsSpan(ranges[18]) == "-1";
+            Alert = message[ranges[18]] == "-1";
         }
 
-        if (message.AsSpan(ranges[19]).Length > 0)
+        if (message[ranges[19]].Length > 0)
         {
-            Emergency = message.AsSpan(ranges[19]) == "-1";
+            Emergency = message[ranges[19]] == "-1";
         }
 
-        if (message.AsSpan(ranges[20]).Length > 0)
+        if (message[ranges[20]].Length > 0)
         {
-            SPI = message.AsSpan(ranges[20]) == "-1";
+            SPI = message[ranges[20]] == "-1";
         }
 
-        if (message.AsSpan(ranges[21]).Length > 0)
+        if (message[ranges[21]].Length > 0)
         {
-            IsOnGround = message.AsSpan(ranges[21]) == "-1";
+            IsOnGround = message[ranges[21]] == "-1";
         }
     }
 
