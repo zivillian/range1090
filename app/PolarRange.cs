@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Text;
 using Geolocation;
 
@@ -21,7 +22,7 @@ public class PolarRange(double latitude, double longitude, bool verbose)
             area = new FlightLevelArea(flightLevel);
             _ranges[flightLevel] = area;
         }
-        if (UpdateArea(area, _groundZero, location))
+        if (UpdateArea(area, location))
         {
             return true;
         }
@@ -56,7 +57,7 @@ public class PolarRange(double latitude, double longitude, bool verbose)
             BinaryPrimitives.WriteDoubleBigEndian(span, area.Value.Longitude);
             span = span.Slice(sizeof(double));
         }
-
+        Debug.Assert(span.IsEmpty, "Too large buffer allocated");
         return buffer;
     }
 
@@ -84,7 +85,7 @@ public class PolarRange(double latitude, double longitude, bool verbose)
                 area = new FlightLevelArea(level);
                 _ranges[level] = area;
             }
-            UpdateArea(area, _groundZero, new Coordinate(lat, lon));
+            UpdateArea(area, new Coordinate(lat, lon));
         }
         _verbose = verbose;
     }
@@ -99,10 +100,10 @@ public class PolarRange(double latitude, double longitude, bool verbose)
         }
     }
 
-    private bool UpdateArea(FlightLevelArea area, Coordinate groundZero, Coordinate position)
+    private bool UpdateArea(FlightLevelArea area, Coordinate position)
     {
-        var distance = GeoCalculator.GetDistance(groundZero, position, decimalPlaces: 6, DistanceUnit.NauticalMiles);
-        var bearing = (ushort)Math.Round(GeoCalculator.GetBearing(groundZero, position), 0);
+        var distance = GeoCalculator.GetDistance(_groundZero, position, decimalPlaces: 6, DistanceUnit.NauticalMiles);
+        var bearing = (ushort)Math.Round(GeoCalculator.GetBearing(_groundZero, position), 0);
         if (area.Update(position.Latitude, position.Longitude, bearing, distance))
         {
             if (_verbose)
