@@ -103,7 +103,7 @@ public class PolarRange(double latitude, double longitude, bool verbose)
     private bool UpdateArea(FlightLevelArea area, Coordinate position)
     {
         var distance = GeoCalculator.GetDistance(_groundZero, position, decimalPlaces: 6, DistanceUnit.NauticalMiles);
-        var bearing = (ushort)Math.Round(GeoCalculator.GetBearing(_groundZero, position), 0);
+        var bearing = (ushort)Math.Floor(GeoCalculator.GetBearing(_groundZero, position));
         if (area.Update(position.Latitude, position.Longitude, bearing, distance))
         {
             if (_verbose)
