@@ -57,7 +57,7 @@ public class Flight(SbsMessage message)
         get
         {
             if (!IsValid) return 0;
-            return (ushort)(_lastAltitude.Altitude!.Value / 100);
+            return (ushort)Math.Round(_lastAltitude.Altitude!.Value / 100d, 0);
         }
     }
 
