@@ -57,17 +57,17 @@ public class SbsMessage
 
         if (message[ranges[11]].Length > 0)
         {
-            Altitude = int.Parse(message[ranges[11]]);
+            Altitude = Int32.Parse(message[ranges[11]]);
         }
 
         if (message[ranges[12]].Length > 0)
         {
-            GroundSpeed = int.Parse(message[ranges[12]]);
+            GroundSpeed = Int32.Parse(message[ranges[12]]);
         }
 
         if (message[ranges[13]].Length > 0)
         {
-            Track = int.Parse(message[ranges[13]]);
+            Track = Int32.Parse(message[ranges[13]]);
         }
 
         if (message[ranges[14]].Length > 0)
@@ -82,7 +82,7 @@ public class SbsMessage
 
         if (message[ranges[16]].Length > 0)
         {
-            VerticalRate = int.Parse(message[ranges[16]]);
+            VerticalRate = Int32.Parse(message[ranges[16]]);
         }
 
         if (message[ranges[17]].Length > 0)
