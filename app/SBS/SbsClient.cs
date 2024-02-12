@@ -32,9 +32,9 @@ public class SbsClient : IDisposable
             }
             do
             {
-                var line = readBuffer.Slice(0, eol);
+                var line = readBuffer[..eol];
                 yield return new SbsMessage(line.Span);
-                readBuffer = readBuffer.Slice(eol).Slice(LineBreak.Length);
+                readBuffer = readBuffer[eol..][LineBreak.Length..];
                 if (readBuffer.IsEmpty)
                 {
 
