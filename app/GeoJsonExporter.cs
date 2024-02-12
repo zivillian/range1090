@@ -33,9 +33,10 @@ public class GeoJsonExporter
         if (DateTime.Now.AddSeconds(_interval) < _lastExport) return;
         var collection = new FeatureCollection();
 
+        var coordinates = new List<Coordinate>(360 + 1);
         foreach (var flightLevel in levels.OrderByDescending(x => x.FlightLevel))
         {
-            var coordinates = new List<Coordinate>(360 + 1);
+            coordinates.Clear();
             var bearings = flightLevel.Positions.ToDictionary(x => x.Bearing);
             var lastWasNull = false;
             var secondToLastWasNull = false;

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace range1090.SBS;
 
@@ -35,79 +34,80 @@ public class SbsMessage
             '8' => SbsTransmissionMessageType.AllCallReply,
             _ => throw new ArgumentOutOfRangeException("invalid SBS transmission message type")
         };
-        var fields = message.Split(',');
+        Span<Range> ranges = stackalloc Range[22];
+        message.AsSpan().Split(ranges, ',');
 
-        SessionId = fields[2];
-        AircraftId = fields[3];
-        HexIdent = fields[4];
-        FlightId = fields[5];
+        SessionId = message[ranges[2]];
+        AircraftId = message[ranges[3]];
+        HexIdent = message[ranges[4]];
+        FlightId = message[ranges[5]];
         Generated = new DateTimeOffset(
-            DateOnly.ParseExact(fields[6], "yyyy/MM/dd", null),
-            TimeOnly.ParseExact(fields[7], @"HH':'mm':'ss'.'fff", null),
+            DateOnly.ParseExact(message.AsSpan(ranges[6]), "yyyy/MM/dd"),
+            TimeOnly.ParseExact(message.AsSpan(ranges[7]), "HH':'mm':'ss'.'fff"),
             TimeSpan.Zero);
         Logged = new DateTimeOffset(
-            DateOnly.ParseExact(fields[8], "yyyy/MM/dd", null),
-            TimeOnly.ParseExact(fields[9], @"HH':'mm':'ss'.'fff", null),
+            DateOnly.ParseExact(message.AsSpan(ranges[8]), "yyyy/MM/dd"),
+            TimeOnly.ParseExact(message.AsSpan(ranges[9]), "HH':'mm':'ss'.'fff"),
             TimeSpan.Zero);
-        if (fields[10].Length > 0)
+        if (message.AsSpan(ranges[10]).Length > 0)
         {
             HasCallSign = true;
-            CallSign = fields[10];
+            CallSign = message[ranges[10]];
         }
 
-        if (fields[11].Length > 0)
+        if (message.AsSpan(ranges[11]).Length > 0)
         {
-            Altitude = int.Parse(fields[11]);
+            Altitude = int.Parse(message.AsSpan(ranges[11]));
         }
 
-        if (fields[12].Length > 0)
+        if (message.AsSpan(ranges[12]).Length > 0)
         {
-            GroundSpeed = int.Parse(fields[12]);
+            GroundSpeed = int.Parse(message.AsSpan(ranges[12]));
         }
 
-        if (fields[13].Length > 0)
+        if (message.AsSpan(ranges[13]).Length > 0)
         {
-            Track = int.Parse(fields[13]);
+            Track = int.Parse(message.AsSpan(ranges[13]));
         }
 
-        if (fields[14].Length > 0)
+        if (message.AsSpan(ranges[14]).Length > 0)
         {
-            Latitude = Double.Parse(fields[14], CultureInfo.InvariantCulture);
+            Latitude = Double.Parse(message.AsSpan(ranges[14]), CultureInfo.InvariantCulture);
         }
 
-        if (fields[15].Length > 0)
+        if (message.AsSpan(ranges[15]).Length > 0)
         {
-            Longitude = Double.Parse(fields[15], CultureInfo.InvariantCulture);
+            Longitude = Double.Parse(message.AsSpan(ranges[15]), CultureInfo.InvariantCulture);
         }
 
-        if (fields[16].Length > 0)
+        if (message.AsSpan(ranges[16]).Length > 0)
         {
-            VerticalRate = int.Parse(fields[16]);
+            VerticalRate = int.Parse(message.AsSpan(ranges[16]));
         }
 
-        if (fields[17].Length > 0)
+        if (message.AsSpan(ranges[17]).Length > 0)
         {
-            Squawk = fields[17];
+            Squawk = message[ranges[17]];
         }
 
-        if (fields[18].Length > 0)
+        if (message.AsSpan(ranges[18]).Length > 0)
         {
-            Alert = fields[18] == "-1";
+            Alert = message.AsSpan(ranges[18]) == "-1";
         }
 
-        if (fields[19].Length > 0)
+        if (message.AsSpan(ranges[19]).Length > 0)
         {
-            Emergency = fields[19] == "-1";
+            Emergency = message.AsSpan(ranges[19]) == "-1";
         }
 
-        if (fields[20].Length > 0)
+        if (message.AsSpan(ranges[20]).Length > 0)
         {
-            SPI = fields[20] == "-1";
+            SPI = message.AsSpan(ranges[20]) == "-1";
         }
 
-        if (fields[21].Length > 0)
+        if (message.AsSpan(ranges[21]).Length > 0)
         {
-            IsOnGround = fields[21] == "-1";
+            IsOnGround = message.AsSpan(ranges[21]) == "-1";
         }
     }
 
