@@ -4,7 +4,7 @@ public class FlightLevelArea(ushort flightLevel)
 {
     public readonly ushort FlightLevel = flightLevel;
 
-    private readonly List<FlightLevelSegment> _positions = new();
+    private readonly List<FlightLevelSegment> _positions = new(360);
 
     public IEnumerable<FlightLevelSegment> Positions => _positions;
 
