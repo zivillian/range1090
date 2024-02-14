@@ -20,15 +20,23 @@ public class SbsClient : IDisposable
         await using var stream = _client.GetStream();
         using var reader = new StreamReader(stream);
         var buffer = new char[256];
-        var bufferStart = 0;
+        var bufferValidEnd = 0;
         while (_client.Connected && stream.CanRead && !reader.EndOfStream && !cancellationToken.IsCancellationRequested)
         {
-            var read = await reader.ReadAsync(buffer.AsMemory(bufferStart), cancellationToken);
-            var readBuffer = buffer.AsMemory(0, read + bufferStart);
+            var read = await reader.ReadAsync(buffer.AsMemory(bufferValidEnd), cancellationToken);
+            bufferValidEnd += read;
+            var readBuffer = buffer.AsMemory(0, bufferValidEnd);
             var eol = readBuffer.Span.IndexOf(LineBreak);
             if (eol == -1)
             {
-                throw new InvalidOperationException("buffer full");
+                if (readBuffer.Length == buffer.Length)
+                {
+                    throw new InvalidOperationException("buffer full");
+                }
+                else
+                {
+                    continue;
+                }
             }
             do
             {
@@ -45,11 +53,11 @@ public class SbsClient : IDisposable
             if (!readBuffer.IsEmpty)
             {
                 readBuffer.CopyTo(buffer);
-                bufferStart = readBuffer.Length;
+                bufferValidEnd = readBuffer.Length;
             }
             else
             {
-                bufferStart = 0;
+                bufferValidEnd = 0;
             }
         }
     }
