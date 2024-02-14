@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Collections;
+using System.Numerics;
+using System.Text.Json;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO.Converters;
@@ -34,8 +36,12 @@ public class GeoJsonExporter
         var collection = new FeatureCollection();
 
         var coordinates = new List<Coordinate>(360 + 1);
+        var covered = new BigInteger();
+        var one = new BigInteger(1);
         foreach (var flightLevel in levels.OrderByDescending(x => x.FlightLevel))
         {
+            var maxRange = 0d;
+            covered = 0;
             coordinates.Clear();
             var bearings = flightLevel.Positions.ToDictionary(x => x.Bearing);
             var lastWasNull = false;
@@ -59,6 +65,8 @@ public class GeoJsonExporter
                 }
                 else
                 {
+                    covered |= (one << bearing);
+                    maxRange = Math.Max(maxRange, segment.Distance);
                     secondToLastWasNull = lastWasNull;
                     lastWasNull = false;
                     coordinates.Add(new Coordinate(segment.Longitude, segment.Latitude));
@@ -78,6 +86,8 @@ public class GeoJsonExporter
             var attributes = new AttributesTable
             {
                 { "altitude", flightLevel.FlightLevel * 100 },
+                { "range", maxRange },
+                { "degrees", $"0x{covered:X}" }
             };
             var feature = new Feature(polygon, attributes);
             if (!feature.Geometry.IsEmpty)

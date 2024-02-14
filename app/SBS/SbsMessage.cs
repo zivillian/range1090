@@ -41,7 +41,7 @@ public class SbsMessage
         AircraftId = message[ranges[3]].ToString();
         HexIdent = message[ranges[4]].ToString();
         FlightId = message[ranges[5]].ToString();
-        if (fields < 10) return;
+        if (fields < 10) throw new NotImplementedException(message.ToString());
         Generated = new DateTimeOffset(
             DateOnly.ParseExact(message[ranges[6]], "yyyy/MM/dd"),
             TimeOnly.ParseExact(message[ranges[7]], "HH':'mm':'ss'.'fff"),
@@ -50,7 +50,7 @@ public class SbsMessage
             DateOnly.ParseExact(message[ranges[8]], "yyyy/MM/dd"),
             TimeOnly.ParseExact(message[ranges[9]], "HH':'mm':'ss'.'fff"),
             TimeSpan.Zero);
-        if (fields < 22) return;
+        if (fields < 22) throw new NotImplementedException(message.ToString());
         if (message[ranges[10]].Length > 0)
         {
             HasCallSign = true;
