@@ -74,7 +74,7 @@ public class GeoJsonExporter
 
             //https://github.com/NetTopologySuite/NetTopologySuite.IO.GeoJSON/issues/135
             coordinates.ForEach(_precision.MakePrecise);
-            var polygon = _factory.CreatePolygon(coordinates.ToArray());
+            var polygon = _factory.CreatePolygon(new OptimizedCoordinateSequence(coordinates));
             var attributes = new AttributesTable
             {
                 { "altitude", flightLevel.FlightLevel * 100 },
