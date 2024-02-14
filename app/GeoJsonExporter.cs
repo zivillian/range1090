@@ -37,7 +37,7 @@ public class GeoJsonExporter
 
         var coordinates = new List<Coordinate>(360 + 1);
         var covered = new BigInteger();
-        var one = new BigInteger(1);
+        var one = BigInteger.One;
         foreach (var flightLevel in levels.OrderByDescending(x => x.FlightLevel))
         {
             var maxRange = 0d;
