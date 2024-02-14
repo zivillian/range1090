@@ -221,8 +221,8 @@
 
     function restoreFilter(){
       const urlParams = new URLSearchParams(window.location.search);
-      const min = urlParams.get('min');
-      const max = urlParams.get('max');
+      const min = urlParams.get('min') ?? 0;
+      const max = urlParams.get('max') ?? 50000;
       if (min !== null){
         setMinAltitude(min);
         filterMinAltitude(min);
@@ -245,7 +245,7 @@
 
         const flightLevels = L.DomUtil.create('div', '', this._container);
         const flightLevelsLabel = L.DomUtil.create('span', 'leaflet-stats-label', flightLevels);
-        flightLevelsLabel.innerHTML = 'visible flight levels:';
+        flightLevelsLabel.innerHTML = 'flight levels:';
         this._flightLevelsValue = L.DomUtil.create('span', 'leaflet-stats-value', flightLevels);
 
         const bearings = L.DomUtil.create('div', '', this._container);
