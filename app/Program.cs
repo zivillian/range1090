@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using range1090;
 using range1090.SBS;
+using System.Runtime.InteropServices;
 
 var parsed = Parser.Default.ParseArguments<Options>(args);
 if (parsed.Tag == ParserResultType.NotParsed)
@@ -15,6 +16,11 @@ Console.CancelKeyPress += (_, e) =>
     e.Cancel = true;
     cts.Cancel();
 };
+using var handler = PosixSignalRegistration.Create(PosixSignal.SIGTERM, x =>
+{
+    x.Cancel = true;
+    cts.Cancel();
+});
 
 using var client = new SbsClient();
 await client.ConnectAsync(options.Server, options.Port, cts.Token);
