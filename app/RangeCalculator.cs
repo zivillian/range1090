@@ -8,8 +8,6 @@ public class RangeCalculator(double latitude, double longitude, bool verbose)
 
     public int MessageCount { get; private set; }
 
-    public int FlightCount => _flights.Count;
-
     private readonly Dictionary<string, Flight> _flights = new();
 
     public bool Add(SbsMessage message)
