@@ -39,7 +39,7 @@ try
 
         if (!options.Verbose && DateTime.Now > _nextStats)
         {
-            _nextStats = DateTime.Now.AddSeconds(60);
+            _nextStats = _nextStats.AddSeconds(60);
             calculator.DumpStats();
         }
     }
