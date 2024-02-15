@@ -27,6 +27,7 @@ await client.ConnectAsync(options.Server, options.Port, cts.Token);
 var calculator = new RangeCalculator(options.Latitude, options.Longitude, options.Verbose);
 var exporter = new GeoJsonExporter(options.Latitude, options.Longitude, options.Precision, options.Interval);
 await calculator.LoadFileFileAsync(options.CacheFile, cts.Token);
+var _nextStats = DateTime.MinValue;
 try
 {
     await foreach (var message in client.ReadAsync(cts.Token))
@@ -34,6 +35,12 @@ try
         if (calculator.Add(message))
         {
             await exporter.ExportGeoJsonAsync(options.GeoJson, calculator.GetFlightLevels(), cts.Token);
+        }
+
+        if (DateTime.Now > _nextStats)
+        {
+            _nextStats = DateTime.Now.AddSeconds(60);
+            calculator.DumpStats();
         }
     }
 }

@@ -29,6 +29,13 @@ public class PolarRange(double latitude, double longitude, bool verbose)
         return false;
     }
 
+    public void DumpStats()
+    {
+        var totalPercentage = _ranges.Where(x => x is not null)
+        .Sum(x => x!.CoveragePercentage) / _ranges.Length;
+        Console.WriteLine($"Total coverage:{totalPercentage,7:F3}%");
+    }
+
     public byte[] Serialize()
     {
         var validRanges = _ranges

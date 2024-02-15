@@ -30,6 +30,11 @@ public class RangeCalculator(double latitude, double longitude, bool verbose)
         return _range.Add(flight.Position, flight.FlightLevel);
     }
 
+    public void DumpStats()
+    {
+        _range.DumpStats();
+    }
+
     public Task SaveToFileAsync(string? filename, CancellationToken cancellationToken)
     {
         if (String.IsNullOrEmpty(filename)) return Task.CompletedTask;
