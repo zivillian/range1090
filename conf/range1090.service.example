@@ -1,0 +1,16 @@
+[Unit]
+Description=range1090
+
+[Service]
+WorkingDirectory=/opt/range1090
+RuntimeDirectory=range1090
+ExecStart=/opt/range1090/range1090 --lat 52.00000 --lon 13.00000 --cache /var/cache/range1090.cache --geojson /run/range1090/range.json
+Restart=always
+# Restart service after 10 seconds if dotnet service crashes
+RestartSec=10
+SyslogIdentifier=range1090
+User=pi
+Environment="DOTNET_CLI_TELEMETRY_OPTOUT=1"
+
+[Install]
+WantedBy=multi-user.target

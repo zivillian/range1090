@@ -96,7 +96,8 @@ public class GeoJsonExporter
             }
         }
 
-        await using var file = File.Open(filename, FileMode.Truncate);
+        await using var file = File.Open(filename, FileMode.OpenOrCreate);
+        file.SetLength(0);
         await JsonSerializer.SerializeAsync(file, collection, _jsonOptions, cancellationToken);
         _lastExport = DateTime.Now;
     }

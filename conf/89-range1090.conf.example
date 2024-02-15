@@ -1,0 +1,11 @@
+#lighttpd configuration for tar1090
+
+# redirect the slash-less URL
+url.redirect += (
+  "^/range1090$" => "/range1090/"
+)
+
+alias.url += (
+  "/range1090/range.json" => "/run/range1090/range.json",
+  "/range1090/" => "/opt/range1090/html/"
+)
