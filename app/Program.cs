@@ -37,7 +37,7 @@ try
             await exporter.ExportGeoJsonAsync(options.GeoJson, calculator.GetFlightLevels(), cts.Token);
         }
 
-        if (DateTime.Now > _nextStats)
+        if (!options.Verbose && DateTime.Now > _nextStats)
         {
             _nextStats = DateTime.Now.AddSeconds(60);
             calculator.DumpStats();
