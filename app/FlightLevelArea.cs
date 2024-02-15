@@ -2,26 +2,32 @@
 
 public class FlightLevelArea(ushort flightLevel)
 {
+    private ushort _validSegments = 0;
+
     public readonly ushort FlightLevel = flightLevel;
 
-    private readonly List<FlightLevelSegment> _positions = new(360);
+    private readonly FlightLevelSegment?[] _positions = new FlightLevelSegment?[360];
 
-    public IEnumerable<FlightLevelSegment> Positions => _positions;
+    public IEnumerable<FlightLevelSegment> Positions => _positions.Where(x => x != null)!;
 
-    public bool IsValid => _positions.Count > 0;
+    public bool IsValid => _validSegments > 0;
 
-    public double CoveragePercentage => (_positions.Count / 360d)*100;
+    public double CoveragePercentage => (_validSegments / 360d)*100;
+
+    public FlightLevelSegment? GetSegment(ushort bearing)
+    {
+        return _positions[bearing];
+    }
 
     public bool Update(double latitude, double longitude, ushort bearing, double distance)
     {
-        foreach (var existing in _positions)
+        var segment = _positions[bearing];
+        if (segment is null)
         {
-            if (existing.Bearing == bearing)
-            {
-                return existing.Update(latitude, longitude, bearing, distance);
-            }
+            _positions[bearing] = FlightLevelSegment.Create(latitude, longitude, distance);
+            _validSegments++;
+            return true;
         }
-        _positions.Add(FlightLevelSegment.Create(latitude, longitude, bearing, distance));
-        return true;
+        return segment.Update(latitude, longitude, distance);
     }
 }

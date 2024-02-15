@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text.Json;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
@@ -36,19 +35,18 @@ public class GeoJsonExporter
         var collection = new FeatureCollection();
 
         var coordinates = new List<Coordinate>(360 + 1);
-        var covered = new BigInteger();
         var one = BigInteger.One;
         foreach (var flightLevel in levels.OrderByDescending(x => x.FlightLevel))
         {
             var maxRange = 0d;
-            covered = 0;
+            BigInteger covered = 0;
             coordinates.Clear();
-            var bearings = flightLevel.Positions.ToDictionary(x => x.Bearing);
             var lastWasNull = false;
             var secondToLastWasNull = false;
             for (ushort bearing = 0; bearing < 360; bearing++)
             {
-                if (!bearings.TryGetValue(bearing, out var segment))
+                var segment = flightLevel.GetSegment(bearing);
+                if (segment is null)
                 {
                     if (lastWasNull) continue;
                     if (secondToLastWasNull)
