@@ -15,7 +15,7 @@ public class PolarRange(double latitude, double longitude, bool verbose)
 
     public bool Add(Coordinate location, ushort flightLevel)
     {
-        if (flightLevel >= MAX_FLIGHT_LEVEL) flightLevel = MAX_FLIGHT_LEVEL;
+        if (flightLevel >= MAX_FLIGHT_LEVEL) flightLevel = MAX_FLIGHT_LEVEL-1;
         var area = _ranges[flightLevel];
         if (area is null)
         {
