@@ -19,11 +19,11 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
     - name: Restore dependencies
-      run: dotnet restore -r linux-arm app\range1090.csproj
+      run: dotnet restore -r linux-arm app/range1090.csproj
     - name: Build
-      run: dotnet publish --no-restore -c release -r linux-arm --sc app\range1090.csproj
+      run: dotnet publish --no-restore -c release -r linux-arm --sc app/range1090.csproj
     - name: Upload
       uses: actions/upload-artifact@v4.3.1
       with:
