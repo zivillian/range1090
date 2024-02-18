@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>range1090</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="leaflet.css"/>
@@ -18,9 +18,18 @@
 	}
   .leaflet-control-slider-value {
     padding: 0 1.5em 0 .5em;
-  }.leaflet-control-slider-value::after {
+  }
+  .leaflet-control-slider-value::after {
     content: 'ft';
     margin-left: .1em;
+  }
+  .leaflet-control-stats{
+    padding: .5em 1em;
+    font-size: 1.1em;
+  }
+  .leaflet-stats-label{
+    font-weight: bold;
+    margin-right: .2em;;
   }
 	</style>
   </head>
@@ -150,16 +159,19 @@
       const response = await fetch('range.json');
       const geojson = await response.json();
       const geoJsonLayer = L.geoJSON(geojson, { style: styleLayer }).addTo(map);
-      map.fitBounds(geoJsonLayer.getBounds())
+      geoJsonLayer.eachLayer(l => {
+        if (l.feature === undefined) return;
+        l.feature.properties.degrees = BigInt(l.feature.properties.degrees);
+      });
+      map.fitBounds(geoJsonLayer.getBounds());
+      restoreFilter();
     }
 
     function filterMinAltitude(value){
       const minValue = parseInt(value);
       let maxValue = parseInt(maxAltitude.slider.value);
       if (maxValue < minValue){
-        maxAltitude.slider.value = value;
-        const event = new Event('input', {bubbles:false});
-        maxAltitude.slider.dispatchEvent(event);
+        setMaxAltitude(value);
         maxValue = value;
       }
       filterAltitude(minValue, maxValue);
@@ -169,15 +181,37 @@
       const maxValue = parseInt(value);
       let minValue = parseInt(minAltitude.slider.value);
       if (minValue > maxValue){
-        minAltitude.slider.value = value;
-        const event = new Event('input', {bubbles:false});
-        minAltitude.slider.dispatchEvent(event);
+        setMinAltitude(value);
         minValue = value;
       }
       filterAltitude(minValue, maxValue);
     }
 
+    function setMinAltitude(value){
+      minAltitude.slider.value = value;
+      const event = new Event('input', {bubbles:false});
+      minAltitude.slider.dispatchEvent(event);
+    }
+
+    function setMaxAltitude(value){ 
+      maxAltitude.slider.value = value;
+      const event = new Event('input', {bubbles:false});
+      maxAltitude.slider.dispatchEvent(event);
+    }
+
+    const popCount = (bigint) => {
+      let c = 0;
+      while (bigint > 0) {
+        bigint &= bigint - 1n;
+        c++;
+      }
+      return c;
+    }
+
     function filterAltitude(min, max){
+      let range = 0;
+      let levels = 0;
+      let covered = 0n;
       map.eachLayer(l => {
         if (l.feature === undefined) return;
         const altitude = l.feature.properties.altitude;
@@ -185,11 +219,58 @@
           l.setStyle({fill:false});
         } else {
           l.setStyle({fill:true});
+          range = Math.max(range, l.feature.properties.range);
+          covered |= l.feature.properties.degrees;
+          levels++;
         }
       });
+      stats.update(range, levels, popCount(covered));
+      window.history.replaceState('', '', `?min=${min}&max=${max}`)
     }
 
-    const flightLevels = new Map();
+    function restoreFilter(){
+      const urlParams = new URLSearchParams(window.location.search);
+      const min = urlParams.get('min') ?? 0;
+      const max = urlParams.get('max') ?? 50000;
+      if (min !== null){
+        setMinAltitude(min);
+        filterMinAltitude(min);
+      }
+      if (max !== null){
+        setMaxAltitude(max);
+        filterMaxAltitude(max);
+      }
+    }
+
+    L.Control.Stats = L.Control.extend({
+      onAdd: function (map) {
+        const className = 'leaflet-control-stats';
+        this._container = L.DomUtil.create('div', className+ ' leaflet-control-layers ');
+        
+        const range = L.DomUtil.create('div', '', this._container);
+        const rangeLabel = L.DomUtil.create('span', 'leaflet-stats-label', range);
+        rangeLabel.innerHTML = 'max. range:';
+        this._rangeValue = L.DomUtil.create('span', 'leaflet-stats-value', range);
+
+        const flightLevels = L.DomUtil.create('div', '', this._container);
+        const flightLevelsLabel = L.DomUtil.create('span', 'leaflet-stats-label', flightLevels);
+        flightLevelsLabel.innerHTML = 'flight levels:';
+        this._flightLevelsValue = L.DomUtil.create('span', 'leaflet-stats-value', flightLevels);
+
+        const bearings = L.DomUtil.create('div', '', this._container);
+        const bearingsLabel = L.DomUtil.create('span', 'leaflet-stats-label', bearings);
+        bearingsLabel.innerHTML = 'covered degrees:';
+        this._bearingsValue = L.DomUtil.create('span', 'leaflet-stats-value', bearings);
+
+        return this._container;
+      },
+      update: function(range, levels, covered){
+        this._rangeValue.innerHTML = `${range.toFixed(1)} nm`;
+        this._flightLevelsValue.innerHTML = levels;
+        this._bearingsValue.innerHTML = `${covered}°`;
+      }
+    });
+
     const map = L.map('map', {
       preferCanvas: true,
       zoomSnap: 0.5
@@ -228,6 +309,8 @@
     minAltitude.addTo(map);
     maxAltitude.update = filterMaxAltitude;
     minAltitude.update = filterMinAltitude;
+    const stats = new L.Control.Stats();
+    stats.addTo(map);
     loadGeojson(map);
   </script>
 </html>
