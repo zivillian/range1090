@@ -26,12 +26,11 @@ using var handler = PosixSignalRegistration.Create(PosixSignal.SIGTERM, x =>
 var calculator = new RangeCalculator(options.Latitude, options.Longitude, options.Verbose);
 var exporter = new GeoJsonExporter(options.Latitude, options.Longitude, options.Precision, options.Interval);
 await calculator.LoadFromFileAsync(options.CacheFile, cts.Token);
-var nextStats = DateTime.MinValue;
 
 var clients = new List<SbsClient>();
-foreach (var mlatPort in options.Ports)
+foreach (var port in options.Ports)
 {
-    clients.Add(new SbsClient(options.Server, mlatPort));
+    clients.Add(new SbsClient(options.Server, port));
 }
 
 await Task.WhenAll(clients.Select(x => x.ConnectAsync(cts.Token)));
@@ -66,6 +65,7 @@ async Task WriteToChannelAsync(ChannelWriter<SbsMessage> writer, SbsClient clien
 
 async Task ReadFromChannelAsync(ChannelReader<SbsMessage> reader, RangeCalculator calculator, GeoJsonExporter exporter, Options options, CancellationToken cancellationToken)
 {
+    var nextStats = DateTime.MinValue;
     try
     {
         await foreach (var message in reader.ReadAllAsync(cancellationToken).WithCancellation(cancellationToken))
@@ -77,7 +77,7 @@ async Task ReadFromChannelAsync(ChannelReader<SbsMessage> reader, RangeCalculato
 
             if (!options.Verbose && DateTime.Now > nextStats)
             {
-                nextStats = nextStats.AddSeconds(60);
+                nextStats = DateTime.Now.AddSeconds(60);
                 calculator.DumpStats();
             }
         }

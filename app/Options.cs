@@ -7,7 +7,7 @@ public class Options
     [Option(Default = "localhost", HelpText = "SBS host")]
     public string Server { get; set; } = "localhost";
 
-    [Option(Separator = ',', HelpText = "SBS ports (separated by ',')")]
+    [Option(Default = new ushort[] { 30003 }, Separator = ',', HelpText = "SBS ports (separated by ',')")]
     public IEnumerable<ushort> Ports { get; set; } = new ushort[] { 30003 };
 
     [Option("lat", Required = true, HelpText = "Latitude of the receiver location")]
