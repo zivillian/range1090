@@ -24,6 +24,9 @@ jobs:
       run: dotnet restore -r linux-arm app/range1090.csproj
     - name: Build
       run: dotnet publish --no-restore -c release -r linux-arm --sc app/range1090.csproj
+    - name: copy html
+      run: |
+        cp -r html app/bin/release/net8.0/linux-arm/publish/.
     - name: Upload
       uses: actions/upload-artifact@v4.3.1
       with:
