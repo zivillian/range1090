@@ -271,6 +271,23 @@
       }
     });
 
+    L.Control.Github = L.Control.extend({
+      onAdd: function (map) {
+        const className = 'leaflet-control-logo';
+        this._container = L.DomUtil.create('div', className + ' ');
+
+        const a = L.DomUtil.create('a', '', this._container);
+        a.setAttribute('href', 'https://github.com/zivillian/range1090/');
+        a.setAttribute('target', '_blank');
+
+        const img = L.DomUtil.create('img', '', a);
+        img.setAttribute('src', 'github-mark.png');
+        img.setAttribute('width', '100px')
+
+        return this._container;
+      }
+    });
+
     const map = L.map('map', {
       preferCanvas: true,
       zoomSnap: 0.5
@@ -311,6 +328,8 @@
     minAltitude.update = filterMinAltitude;
     const stats = new L.Control.Stats();
     stats.addTo(map);
+    const github = new L.Control.Github();
+    github.addTo(map);
     loadGeojson(map);
   </script>
 </html>
