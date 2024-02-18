@@ -4,12 +4,19 @@ using range1090.SBS;
 
 namespace range1090;
 
-public class Flight(SbsMessage message)
+public class Flight
 {
-    public string HexIdent { get; } = message.HexIdent;
-    private readonly DateTimeOffset _firstMessageTimestamp = message.Generated;
+    public string HexIdent { get; }
+    private readonly DateTimeOffset _firstMessageTimestamp;
     private SbsMessage? _lastAltitude;
     private SbsMessage? _lastPosition;
+
+    public Flight(SbsMessage message)
+    {
+        HexIdent = message.HexIdent;
+        _firstMessageTimestamp = message.Generated;
+        Add(message);
+    }
 
     public DateTimeOffset LastMessage
     {
