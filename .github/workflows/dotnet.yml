@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
@@ -28,7 +28,7 @@ jobs:
       run: |
         cp -r html app/bin/release/net8.0/linux-arm/publish/.
     - name: Upload
-      uses: actions/upload-artifact@v4.3.1
+      uses: actions/upload-artifact@v4
       with:
         name: range1090-linux-arm
         path: app/bin/release/net8.0/linux-arm/publish
