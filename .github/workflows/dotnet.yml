@@ -1,0 +1,31 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore -r linux-arm app\range1090.csproj
+    - name: Build
+      run: dotnet publish --no-restore -c release -r linux-arm --sc app\range1090.csproj
+    - name: Upload
+      uses: actions/upload-artifact@v4.3.1
+      with:
+        name: range1090-linux-arm
+        path: app/bin/release/net8.0/linux-arm/publish
