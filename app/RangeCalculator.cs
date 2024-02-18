@@ -43,7 +43,7 @@ public class RangeCalculator(double latitude, double longitude, bool verbose)
         return File.WriteAllBytesAsync(filename, data, cancellationToken);
     }
 
-    public async Task LoadFileFileAsync(string? filename, CancellationToken cancellationToken)
+    public async Task LoadFromFileAsync(string? filename, CancellationToken cancellationToken)
     {
         if (String.IsNullOrEmpty(filename)) return;
         if (!File.Exists(filename)) return;

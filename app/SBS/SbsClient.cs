@@ -5,18 +5,25 @@ namespace range1090.SBS;
 
 public class SbsClient : IDisposable
 {
-    private TcpClient? _client;
-    private const string LineBreak = "\r\n";
+    private readonly string _server;
+    private readonly ushort _port;
+    private TcpClient _client;
 
-    public async Task ConnectAsync(string server, ushort port, CancellationToken cancellationToken)
+    public SbsClient(string server, ushort port)
     {
+        _server = server;
+        _port = port;
         _client = new TcpClient();
-        await _client.ConnectAsync(server, port, cancellationToken);
+    }
+
+    public async Task ConnectAsync(CancellationToken cancellationToken)
+    {
+        await _client.ConnectAsync(_server, _port, cancellationToken);
     }
 
     public async IAsyncEnumerable<SbsMessage> ReadAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (_client is null) throw new InvalidOperationException("not connected");
+        if (!_client.Connected) throw new InvalidOperationException("not connected");
         await using var stream = _client.GetStream();
         using var reader = new StreamReader(stream);
         var buffer = new char[256];
@@ -26,7 +33,7 @@ public class SbsClient : IDisposable
             var read = await reader.ReadAsync(buffer.AsMemory(bufferValidEnd), cancellationToken);
             bufferValidEnd += read;
             var readBuffer = buffer.AsMemory(0, bufferValidEnd);
-            var eol = readBuffer.Span.IndexOf(LineBreak);
+            var eol = readBuffer.Span.IndexOf('\n');
             if (eol == -1)
             {
                 if (readBuffer.Length == buffer.Length)
@@ -41,13 +48,18 @@ public class SbsClient : IDisposable
             do
             {
                 var line = readBuffer[..eol];
-                yield return new SbsMessage(line.Span);
-                readBuffer = readBuffer[eol..][LineBreak.Length..];
-                if (readBuffer.IsEmpty)
+                if (line.Length > 1)
                 {
+                    if (line.Span[^1] == '\r')
+                    {
+                        line = line[..^1];
+                    }
 
+                    yield return new SbsMessage(line.Span);
                 }
-                eol = readBuffer.Span.IndexOf(LineBreak);
+
+                readBuffer = readBuffer[eol..][1..];
+                eol = readBuffer.Span.IndexOf('\n');
             } while (eol != -1);
 
             if (!readBuffer.IsEmpty)
